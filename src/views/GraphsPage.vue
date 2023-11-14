@@ -18,6 +18,9 @@ const toggleState = ref(1);
 const start = ref('');
 const finish = ref('');
 const firstNodeContainer = ref(null);
+const visitedNodes = ref([]);
+
+const bfsResult = ref();
 
 const circleID = ref();
 
@@ -39,6 +42,8 @@ const nodesCountErrorCheck = watch(nodesCount, (nodesCount) => {
 const lettersGen = (int) => {
 	return String.fromCharCode(parseInt(int + 64));
 }
+
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 const writeEdge = (id) => {
 	switch (toggleState.value) {
@@ -81,7 +86,23 @@ const nodePosition = (nodesCount, id, distance) => {
 	}
 }
 
-const bfs = () => {
+const animateCircleColor = (id, newColor, duration, textColor) => {
+	const circle = document.getElementById(id);
+	const text = document.getElementById(id + 10);
+	if (!circle) return;
+
+	circle.style.transition = `fill ${duration}s ease-out`;
+	circle.style.fill = newColor;
+	text.style.transition = `fill ${duration / 3}s ease-out`;
+	text.style.fill = textColor;
+
+	setTimeout(() => {
+		circle.style.transition = '';
+	}, duration * 500);
+};
+
+
+const bfs = async () => {
 	const queue = [start.value];
 	const visited = new Set();
 	const result = [];
@@ -91,18 +112,25 @@ const bfs = () => {
 
 		if (!visited.has(node)) {
 			visited.add(node);
+			animateCircleColor(node, '#FFC759', 1, '#242424');
 			result.push(node);
 
 			for (const neighbor of adjacencyList.value[node]) {
 				queue.push(neighbor);
 			}
 		}
+
+		await delay(500);
+		animateCircleColor(node, '#474554', 1, '#FFFFFFDE');
 	}
+
+	bfsResult.value = result;
 };
 
 const getCircleColor = (id) => {
 	return parseInt(circleID.value) === parseInt(id) ? '#FFC759' : '#242424';
 };
+
 
 const listSetup = watch(nodesCount, () => {
 	adjacencyList.value = {};
@@ -112,12 +140,17 @@ const listSetup = watch(nodesCount, () => {
 });
 
 const isStartCorrect = computed(() => {
-	return start.value in adjacencyList.value && adjacencyList.value[start.value].length > 0;
+	return (start.value in adjacencyList.value && adjacencyList.value[start.value].length > 0);
 });
 
 const isFinishCorrect = computed(() => {
 	return finish.value in adjacencyList.value && adjacencyList.value[finish.value].length > 0;
 });
+
+
+const getTextColor = (id) => {
+	return getCircleColor(id) === '#FFC759' ? '#242424' : '#FFFFFFDE';
+};
 
 </script>
 
@@ -137,7 +170,7 @@ const isFinishCorrect = computed(() => {
 		</div>
 		<transition name="fade">
 			<span v-if="nodesCountError">
-				<strong class="text-pink-600">
+				<strong class="text-vue-violet">
 					Error! Nodes count is incorrect!
 				</strong>
 			</span>
@@ -145,6 +178,7 @@ const isFinishCorrect = computed(() => {
 		<div>
 			{{ adjacencyList }}
 		</div>
+
 		<svg
 			:width="canvasWidth"
 			:height="canvasHeight"
@@ -179,12 +213,12 @@ const isFinishCorrect = computed(() => {
 						animation: `fadeInAndMove 1s ease-out ${0.075 * (id - 1)}s forwards`
 					}"
 					:ref="id"
-					:id="id"
+					:id="lettersGen(id)"
 				/>
 				<text
 					:x="nodePosition(nodesCount, id, 220).x"
 					:y="nodePosition(nodesCount, id, 220).y + 1"
-					fill="#FFFFFFDE"
+					:fill="getTextColor(id)"
 					text-anchor="middle"
 					alignment-baseline="middle"
 					pointer-events="none"
@@ -192,39 +226,39 @@ const isFinishCorrect = computed(() => {
 						opacity: '0',
 						animation: `fadeInAndMove 1s ease-out ${0.075 * (id - 1)}s forwards`
 					}"
+					:id="lettersGen(id) + 10"
 				>
-					{{lettersGen(id)}}
+					{{ lettersGen(id) }}
 				</text>
+
 			</g>
 		</svg>
-		<div>
-			<span>Enter start node: </span>
-			<input
-				v-model="start"
-				type="text"
-				autocomplete="off"
-				class="text-center w-10 h-7 m-1.5 rounded-md"
-			>
-			<span>Enter finish node: </span>
-			<input
-				v-model="finish"
-				type="text"
-				autocomplete="off"
-				class="text-center w-10 h-7 m-1.5 rounded-md"
-			>
+		<transition name="fade">
+			<div v-if="nodesCount && !nodesCountError">
+				<span>Enter start node: </span>
+				<input
+					v-model="start"
+					type="text"
+					autocomplete="off"
+					class="text-center w-10 h-7 m-1.5 rounded-md"
+				>
+			</div>
+		</transition>
+		<transition name="fade">
+		<div v-if="!isStartCorrect && start !== ''">
+			<strong class="text-vue-violet">Error! There's no such start point!</strong>
 		</div>
-		<div v-if="!isStartCorrect">
-			Error! There's no such start point!
+		</transition>
+	</div>
+	<transition name="fade">
+		<div class="flex flex-col justify-start items-center" v-if="isStartCorrect && start !== ''">
+			<button @click="bfs">
+				Start BFS
+			</button>
 		</div>
-		<div v-if="!isFinishCorrect">
-			Error! There's no such finish point!
-		</div>
-		<input
-			v-model="circleID"
-			type="text"
-			autocomplete="off"
-			class="text-center w-10 h-7 m-1.5 rounded-md"
-		>
+	</transition>
+	<div>
+		{{bfsResult}}
 	</div>
 	<home-button/>
 </template>
@@ -233,7 +267,7 @@ const isFinishCorrect = computed(() => {
 
 .fade-enter-active,
 .fade-leave-active {
-	transition: opacity 220ms ease;
+	transition: opacity 500ms ease;
 }
 
 .fade-enter-from,
