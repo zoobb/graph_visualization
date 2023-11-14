@@ -1,5 +1,5 @@
 <script setup>
-import {onMounted, ref, watch} from "vue";
+import {computed, onMounted, ref, watch} from "vue";
 import HomeButton from "../components/HomeButton.vue";
 
 const canvasWidth = 600;
@@ -7,29 +7,38 @@ const canvasHeight = 600;
 const midX = canvasWidth / 2;
 const midY = canvasHeight / 2;
 
+const edges = ref([]);
+const adjacencyList = ref({
+
+});
+
 const nodesCount = ref('');
 const nodesCountError = ref(false);
-const adjacencyList = ref([]);
 const toggleState = ref(1);
-const start = ref({});
-const finish = ref({});
+const start = ref('');
+const finish = ref('');
 const firstNodeContainer = ref(null);
-const isVisited = ref([]);
+
+const circleID = ref();
 
 
 const nodesCountErrorCheck = watch(nodesCount, (nodesCount) => {
 	if (nodesCount >= 1 && nodesCount <= 10 ) {
-		adjacencyList.value = [];
+		edges.value = [];
 		nodesCountError.value = false;
 	}
 	else if (nodesCount === '') {
 		nodesCountError.value = false;
 	}
 	else {
-		adjacencyList.value = [];
+		edges.value = [];
 		nodesCountError.value = true;
 	}
 });
+
+const lettersGen = (int) => {
+	return String.fromCharCode(parseInt(int + 64));
+}
 
 const writeEdge = (id) => {
 	switch (toggleState.value) {
@@ -41,13 +50,16 @@ const writeEdge = (id) => {
 			let edge = {};
 			if (firstNodeContainer.value !== id) {
 				edge[firstNodeContainer.value] = id;
-				adjacencyList.value.push(edge);
+				edges.value.push(edge);
+
+				adjacencyList.value[lettersGen(firstNodeContainer.value)].push(lettersGen(id));
+				adjacencyList.value[lettersGen(id)].push(lettersGen(firstNodeContainer.value));
+
 				toggleState.value = 1;
 				firstNodeContainer.value = null;
 			}
 			break;
 	}
-	console.log(id);
 };
 
 const changeColor = () => {
@@ -70,8 +82,42 @@ const nodePosition = (nodesCount, id, distance) => {
 }
 
 const bfs = () => {
+	const queue = [start.value];
+	const visited = new Set();
+	const result = [];
 
+	while (queue.length) {
+		const node = queue.shift();
+
+		if (!visited.has(node)) {
+			visited.add(node);
+			result.push(node);
+
+			for (const neighbor of adjacencyList.value[node]) {
+				queue.push(neighbor);
+			}
+		}
+	}
 };
+
+const getCircleColor = (id) => {
+	return parseInt(circleID.value) === parseInt(id) ? '#FFC759' : '#242424';
+};
+
+const listSetup = watch(nodesCount, () => {
+	adjacencyList.value = {};
+	for (let node = 1; node <= nodesCount.value; node++) {
+		adjacencyList.value[lettersGen(node)] = [];
+	}
+});
+
+const isStartCorrect = computed(() => {
+	return start.value in adjacencyList.value && adjacencyList.value[start.value].length > 0;
+});
+
+const isFinishCorrect = computed(() => {
+	return finish.value in adjacencyList.value && adjacencyList.value[finish.value].length > 0;
+});
 
 </script>
 
@@ -97,7 +143,7 @@ const bfs = () => {
 			</span>
 		</transition>
 		<div>
-			{{adjacencyList}}
+			{{ adjacencyList }}
 		</div>
 		<svg
 			:width="canvasWidth"
@@ -105,7 +151,7 @@ const bfs = () => {
 			id="canvas"
 			v-if="nodesCount && !nodesCountError"
 		>
-			<g v-for="edge in adjacencyList" :key="edge">
+			<g v-for="edge in edges" :key="edge">
 				<line
 					:x1="nodePosition(nodesCount, parseInt(Object.keys(edge)[0]), 220).x"
 					:y1="nodePosition(nodesCount, parseInt(Object.keys(edge)[0]), 220).y"
@@ -124,7 +170,7 @@ const bfs = () => {
 					:cx="nodePosition(nodesCount, id, 220).x"
 					:cy="nodePosition(nodesCount, id, 220).y"
 					r="28"
-					fill="#242424"
+					:fill="getCircleColor(id)"
 					stroke="#646cff"
 					stroke-width="2"
 					@click="writeEdge(id)"
@@ -133,6 +179,7 @@ const bfs = () => {
 						animation: `fadeInAndMove 1s ease-out ${0.075 * (id - 1)}s forwards`
 					}"
 					:ref="id"
+					:id="id"
 				/>
 				<text
 					:x="nodePosition(nodesCount, id, 220).x"
@@ -146,7 +193,7 @@ const bfs = () => {
 						animation: `fadeInAndMove 1s ease-out ${0.075 * (id - 1)}s forwards`
 					}"
 				>
-					{{String.fromCharCode(id + 64)}}
+					{{lettersGen(id)}}
 				</text>
 			</g>
 		</svg>
@@ -166,9 +213,18 @@ const bfs = () => {
 				class="text-center w-10 h-7 m-1.5 rounded-md"
 			>
 		</div>
-		<div>
-			{{start}} {{finish}}
+		<div v-if="!isStartCorrect">
+			Error! There's no such start point!
 		</div>
+		<div v-if="!isFinishCorrect">
+			Error! There's no such finish point!
+		</div>
+		<input
+			v-model="circleID"
+			type="text"
+			autocomplete="off"
+			class="text-center w-10 h-7 m-1.5 rounded-md"
+		>
 	</div>
 	<home-button/>
 </template>
