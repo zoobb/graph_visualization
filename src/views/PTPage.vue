@@ -1,4 +1,12 @@
 <script setup>
+
+/*
+* Бросается кость пока не выпадут первые три числа. X - число бросков.
+*  Найти вероятности:
+* 	A = {X <= 5},
+*	B = {появление всех чисел кости}
+* */
+
 import { ref } from 'vue';
 import HomeButton from "../components/HomeButton.vue";
 

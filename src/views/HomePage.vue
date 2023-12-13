@@ -4,10 +4,16 @@
 
 <template>
 	<router-link to="/graphs">
-		<button class="m-5 pt-5 pb-5 pl-10 pr-10 text-3xl">Graphs</button>
+		<button class="m-5 pt-5 pb-5 pl-10 pr-10 text-3xl">BFS</button>
 	</router-link>
-	<router-link to="/prob">
-		<button class="m-5 pt-5 pb-5 pl-10 pr-10 text-3xl">Probability theory</button>
+	<router-link to="/bron_kerbosch">
+		<button class="m-5 pt-5 pb-5 pl-10 pr-10 text-3xl">Bron-Kerbosch</button>
+	</router-link>
+	<router-link to="/prims">
+		<button class="m-5 pt-5 pb-5 pl-10 pr-10 text-3xl">Prim's Algorithm</button>
+	</router-link>
+	<router-link to="/playground">
+		<button class="m-5 pt-5 pb-5 pl-10 pr-10 text-3xl">Coloring</button>
 	</router-link>
 </template>
 
