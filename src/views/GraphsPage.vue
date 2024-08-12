@@ -155,7 +155,7 @@ const getTextColor = (id) => {
 </script>
 
 <template>
-	<div class="flex flex-col justify-start items-center">
+	<div class="flex flex-col justify-start items-center h-full">
 		<h1 class="mb-10">Graph input</h1>
 		<div>
 			<span>Enter nodes count(from 1 to 10): </span>
@@ -260,7 +260,6 @@ const getTextColor = (id) => {
 	<div>
 		{{bfsResult}}
 	</div>
-	<home-button/>
 </template>
 
 <style>
